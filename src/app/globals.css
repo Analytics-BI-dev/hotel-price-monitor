@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  background: white;
+  padding: 0.625rem 0.875rem;
+  color: #020617;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.field:focus {
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 3px #fee2e2;
+}
+
+:where(a, button, summary):focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 3px;
+}
+
+button:disabled,
+.field:disabled {
+  cursor: not-allowed;
+}
+
+.field:disabled {
+  background: #f8fafc;
+  color: #475569;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
