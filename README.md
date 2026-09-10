@@ -183,10 +183,20 @@ Quando o projeto for publicado, adicione em **Vercel > Settings > Environment Va
 
 A `SUPABASE_SECRET_KEY` deve ser cadastrada diretamente na Vercel. Nunca adicione seu valor ao GitHub, ao README ou a uma variável iniciada por `NEXT_PUBLIC_`.
 
-O provider do Trivago depende do Chromium do Playwright. O ambiente serverless
-padrão da Vercel pode não incluir o binário compatível e também impõe limites de
-bundle, memória, duração e cold start. Além disso, o semáforo e o dedupe em
-memória valem por instância, não globalmente entre várias funções. Antes da
-produção, valide o runtime escolhido; para carga sustentada, prefira executar a
-coleta em um worker/container dedicado com Chromium instalado e manter a
-aplicação web apenas como orquestradora.
+O Trivago agora seleciona automaticamente `@sparticuz/chromium` nos deployments
+Vercel e mantém o Chromium do Playwright no desenvolvimento local (incluindo
+`vercel dev`). O binário Linux acompanha a função de `/dashboard`; não é
+necessário instalar Chromium no build da Vercel nem contratar um worker externo
+para esta implementação. Não há download de binários por URL durante a consulta.
+
+O dashboard usa Node.js e `maxDuration = 300` segundos. Ative Fluid Compute,
+configure Node 24.x e comece com `TRIVAGO_MAX_CONCURRENCY=1` em 2 GB de memória.
+Com 4 GB, teste concorrência 2 antes de aumentá-la. Os limites e a deduplicação
+em memória continuam valendo por instância, não globalmente. Consultas longas
+podem exceder os 300 segundos e precisam de validação no deploy; não existe
+garantia de completar 10 diárias em qualquer condição de rede.
+
+Veja o passo a passo e a matriz de diagnóstico em
+[docs/trivago-vercel.md](docs/trivago-vercel.md). O smoke test offline do launcher
+é `npm run test:trivago-browser`. A abertura real do binário Linux e o acesso ao
+Trivago a partir do IP da Vercel devem ser homologados após a publicação.

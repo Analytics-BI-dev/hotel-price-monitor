@@ -2,7 +2,9 @@
   "name": "hotel-price-monitor",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": "24.x" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "test": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test \"tests/*.test.mts\"",
     "admin:reset-password": "node --env-file=.env.local scripts/reset-admin-password.mjs",
@@ -11,6 +13,7 @@
     "start": "next start",
     "lint": "eslint .",
     "playwright:install": "playwright install chromium",
+    "test:trivago-browser": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/check-trivago-browser.mts",
     "test:login": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/login-credentials.test.mts",
     "test:pricing": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/pricing.test.mts",
     "test:pricing-presentation": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/pricing-presentation.test.mts",
@@ -28,6 +31,7 @@
     "test:external-link-only": "node --conditions=react-server --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/external-link-only-official.test.mts"
   },
   "dependencies": {
+    "@sparticuz/chromium": "152.0.0",
     "@supabase/ssr": "0.12.5",
     "@supabase/supabase-js": "2.112.4",
     "next": "16.3.3",

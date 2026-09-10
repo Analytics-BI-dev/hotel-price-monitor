@@ -11,6 +11,9 @@ import {
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+// Server Actions invoked by this page inherit this limit (Fluid Compute).
+export const maxDuration = 300;
 
 export default async function DashboardPage() {
   const { user, profile } = await requireActiveProfile();

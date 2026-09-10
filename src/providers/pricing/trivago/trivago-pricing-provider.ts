@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Page } from "playwright";
+import { launchTrivagoBrowser, TrivagoBrowserError } from "./browser.ts";
 
 import type {
   TrivagoDailyResult,
@@ -108,6 +109,7 @@ type TrivagoErrorCategory =
   | "dom_expand_timeout"
   | "dom_parse_error"
   | "browser_not_installed"
+  | "browser_launch_error"
   | "collector_contract_error"
   | "unexpected_error";
 
@@ -548,6 +550,9 @@ function classifyError(
   error: unknown,
   fallback: TrivagoErrorCategory = "unexpected_error",
 ): Extract<TrivagoCollectionOutcome, { kind: "error" }> {
+  if (error instanceof TrivagoBrowserError) {
+    return { kind: "error", message: error.message, category: error.category, retryable: false };
+  }
   const message =
     error instanceof Error
       ? error.message
@@ -1339,8 +1344,7 @@ async function collectWithPlaywright(
     throw new Error("Diagnóstico obrigatório para a coleta real do Trivago.");
   }
   return trivagoBrowserLimiter.run(async () => {
-    const { chromium } = await import("playwright");
-    const browser = await chromium.launch({ headless: true });
+    const browser = await launchTrivagoBrowser();
 
     try {
       const context = await browser.newContext();
