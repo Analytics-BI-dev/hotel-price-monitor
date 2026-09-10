@@ -2,6 +2,37 @@
 
 ## O que está implementado
 
+### Correção de empacotamento do Playwright
+
+Os logs da Vercel identificaram `load_playwright / module_not_found` relacionado
+a `playwright-core`. O problema foi reproduzido localmente copiando **somente**
+as dependências listadas no trace de `/dashboard` para uma pasta temporária fora
+do repositório: `require("playwright-core")` falhava com `MODULE_NOT_FOUND`.
+Ter `index.js` e `package.json` no trace não era suficiente.
+
+O carregador agora importa `playwright-core` diretamente; ele é dependência de
+produção explícita. `playwright` e `playwright-core` ficam fixados na mesma versão
+já utilizada, `1.62.1`, sem atualização do navegador. O Next inclui explicitamente
+o conteúdo de `node_modules/playwright-core` na função de `/dashboard`, preservando
+os módulos internos carregados dinamicamente.
+
+`npm run build` executa automaticamente o `postbuild`, que valida esse pacote
+isolado. Também pode ser executado com `npm run test:trivago-bundle`. A validação
+testa CJS, ESM, importação do pacote serverless e presença dos quatro arquivos
+binários. Ela não carrega `.env.local`, não consulta sites, não abre o Chromium
+Linux e remove apenas sua própria pasta temporária ao terminar.
+
+Após a correção, o teste isolado passou com 331 arquivos de dependências e cerca
+de 91 MiB (medição local, não tamanho final da função Linux publicada). Os 112
+testes existentes e o smoke test do navegador local também passaram.
+
+Para publicar esta correção: envie inclusive `package-lock.json` e
+`scripts/check-trivago-bundle.mjs`, faça novo deploy e repita a consulta de uma
+diária. Não altere variáveis de ambiente. Se persistir um erro de inicialização,
+envie o novo `TRIVAGO_BROWSER_ERROR`; o próximo sinal esperado de avanço é
+`TRIVAGO_BROWSER_READY`. A importação isolada validada não comprova a execução
+do binário Linux nem o acesso ao Trivago a partir da Vercel.
+
 - O mesmo provider e a mesma Server Action do dashboard passam a abrir Chromium
   por `src/providers/pricing/trivago/browser.ts`.
 - Em Vercel Production/Preview (`VERCEL=1`), usa `@sparticuz/chromium@152.0.0`,

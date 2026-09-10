@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Page } from "playwright";
+import type { Page } from "playwright-core";
 import { launchTrivagoBrowser, TrivagoBrowserError } from "./browser.ts";
 
 import type {

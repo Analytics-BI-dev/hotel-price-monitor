@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import type { Browser, LaunchOptions } from "playwright";
+import type { Browser, LaunchOptions } from "playwright-core";
 import { browserFailureFacts } from "./browser-diagnostics.ts";
 
 type BrowserEnvironment = {
@@ -105,9 +105,9 @@ export function createTrivagoBrowserLauncher(dependencies: BrowserDependencies) 
 }
 
 export const launchTrivagoBrowser = createTrivagoBrowserLauncher({
-  preparePlaywright: async () => (await import("playwright")).chromium.executablePath(),
+  preparePlaywright: async () => (await import("playwright-core")).chromium.executablePath(),
   launch: async (options) => {
-    const { chromium } = await import("playwright");
+    const { chromium } = await import("playwright-core");
     return chromium.launch(options);
   },
   serverless: async () => (await import("@sparticuz/chromium")).default,
