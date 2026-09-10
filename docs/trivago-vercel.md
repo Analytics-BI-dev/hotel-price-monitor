@@ -58,6 +58,31 @@ Não é necessário mudar banco, senha, roles ou políticas do Supabase.
 
 ## Diagnóstico no deployment
 
+Ao investigar falhas de inicialização, expanda todas as mensagens da requisição
+POST `/dashboard` e procure `TRIVAGO_BROWSER_ERROR`. Esse evento funciona também
+em produção, sem variável adicional. Registra apenas dados técnicos permitidos:
+
+- `stage`: `load_playwright`, `load_serverless_module`, `extract_executable`,
+  `configure_arguments`, `inspect_executable` ou `launch_browser`;
+- `reason`, `errorCode`, `missingLibrary`, `moduleHint`, `signal`, `exitCode`:
+  valores reconhecidos por lista fechada, nunca mensagem/stack bruta;
+- `nodeVersion`, `platform`, `architecture`, `browserRuntime`, `durationMs`;
+- `executableExists`: `true`/`false` após a verificação, ou `null` se ainda não
+  verificado (não confundir `null` com executável ausente);
+- `browserLaunchId`: correlaciona `TRIVAGO_BROWSER_START`, `TRIVAGO_BROWSER_READY`
+  e `TRIVAGO_BROWSER_ERROR` de uma tentativa de abertura.
+
+`TRIVAGO_BROWSER_READY` confirma apenas a abertura do navegador, não a obtenção
+de tarifas. `async_module_require` distingue incompatibilidade entre require e
+módulo com top-level await; `shared_library_missing` indica dependência Linux;
+`process_killed` sozinho não prova falta de memória. Motivos desconhecidos ficam
+como `unclassified_browser_error`, sem expor o texto original.
+
+Para coletar esse diagnóstico: envie as alterações ao GitHub, faça um novo
+deployment e execute uma pesquisa de uma diária futura com um adulto. Copie o
+JSON de `TRIVAGO_BROWSER_ERROR` e o `TRIVAGO_SEARCH_ERROR` correspondente. Não
+precisa alterar credenciais, memória, concorrência ou habilitar logs brutos.
+
 | Sinal nos logs | Interpretação / ação |
 | --- | --- |
 | `TRIVAGO_SEARCH_SUCCESS` | Confira também ofertas, preço e fornecedor na interface. |
