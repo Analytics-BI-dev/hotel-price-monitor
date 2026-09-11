@@ -1,10 +1,26 @@
 import "server-only";
 
+import type { ValidatedPricingSearch } from "../../../types/pricing.ts";
+
 export interface TrivagoHotelConfig {
   hotelSlug: string;
   hotelName: string;
   propertyId: string;
   searchPathSlug: string;
+}
+
+// This URL is only a manual link. The provider never fetches it.
+export function buildTrivagoSearchUrl(
+  input: Pick<ValidatedPricingSearch, "checkIn" | "checkOut" | "adults">,
+  config: TrivagoHotelConfig,
+): string {
+  const search = [
+    `100-${config.propertyId}`,
+    `dr-${input.checkIn.replaceAll("-", "")}-${input.checkOut.replaceAll("-", "")}`,
+    "drs-40",
+    `rc-1-${input.adults}`,
+  ].join(";");
+  return `https://www.trivago.com.br/pt-BR/lm/${encodeURIComponent(config.searchPathSlug)}?search=${search}`;
 }
 
 export const trivagoHotelConfigs = [

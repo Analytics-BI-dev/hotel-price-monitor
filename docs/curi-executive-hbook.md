@@ -84,7 +84,7 @@ O HBook carrega scripts de reCAPTCHA porque o CAPTCHA é usado na finalização 
 
 Cada combinação de quarto e tarifa disponível vira uma `offer`. Para pesquisas com várias diárias, o provider usa o valor real de cada item de `PerDayRates`. As ofertas de cada dia são ordenadas por preço e `bestPrice` recebe o primeiro valor.
 
-O Trivago do Curi Executive usa o provider real genérico, registrado separadamente do site oficial.
+O Trivago do Curi Executive usa o provider do JSON diário, registrado separadamente do site oficial. Veja `docs/trivago-json.md`.
 
 Disponibilidade ausente ou inválida é erro de schema e não autoriza retornar
 preços. A indicação explícita de café não incluído tem prioridade sobre a

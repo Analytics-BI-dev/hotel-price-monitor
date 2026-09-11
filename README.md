@@ -1,6 +1,6 @@
 # Hotel Price Monitor
 
-Plataforma autenticada para comparar, por diária, o Hotel Curi Executive com seis concorrentes de Pelotas. A composição híbrida preserva os providers de site oficial e usa um único provider real do Trivago, parametrizado para os sete hotéis. Não há histórico persistente.
+Plataforma autenticada para comparar, por diária, o Hotel Curi Executive com seis concorrentes de Pelotas. A composição híbrida preserva os providers de site oficial e lê o JSON diário do Trivago, com mapeamento explícito para os sete hotéis. Não há histórico persistente.
 
 ## Configuração local
 
@@ -17,7 +17,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SECRET_KEY=
 SUPABASE_JWKS_URL=
-TRIVAGO_MAX_CONCURRENCY=3
+TRIVAGO_JSON_URL=
 ```
 
 Depois, execute:
@@ -45,8 +45,8 @@ O projeto Supabase usado no desenvolvimento já possuía a tabela compatível e 
 ## Validação local
 
 ```bash
-npm run test:login
-npm run test:pricing
+npm test
+npm run test:trivago-json
 npm run lint
 npm run build
 ```
@@ -55,7 +55,7 @@ Os testes de pricing cobrem períodos de 1, 10 e 11 diárias, ocupação, determ
 
 ## Site oficial do Hotel Curi Executive
 
-O Curi Executive usa o HBook da HSystem. O provider abre a pesquisa pública server-side para obter um token efêmero de disponibilidade e consulta o endpoint JSON do HBook. Não são usados cookies, login, CAPTCHA ou Playwright nessa fonte oficial. A coleta Trivago real é um provider separado e não altera o HBook.
+O Curi Executive usa o HBook da HSystem. O provider abre a pesquisa pública server-side para obter um token efêmero de disponibilidade e consulta o endpoint JSON do HBook. Não são usados cookies, login, CAPTCHA ou Playwright nessa fonte oficial. O JSON do Trivago é uma fonte separada e não altera o HBook.
 
 Para testar o parser e a composição sem rede:
 
@@ -71,56 +71,59 @@ npm run test:curi-executive:live
 
 O script não efetua reservas e imprime a `searchUrl` de cada caso para validação manual. O contrato observado está documentado em `docs/curi-executive-hbook.md`.
 
-## Trivago real dos sete hotéis
+## Trivago: JSON diário
 
-O `TrivagoPricingProvider` é genérico. A configuração central em
-`src/providers/pricing/trivago/hotel-configs.ts` associa cada slug ao property
-ID correto; o registry cria sete instâncias da mesma classe. A resposta GraphQL
-estruturada é a fonte primária e só é aceita quando pertence inequivocamente ao
-property ID esperado. O DOM é fallback: primeiro há leitura sem clique e a
-expansão visual só é tentada quando faltam dados estruturados.
+A única fonte automática do Trivago é o arquivo JSON atualizado externamente
+no OneDrive. Configure `TRIVAGO_JSON_URL` no `.env.local` (somente no servidor,
+sem prefixo `NEXT_PUBLIC_`). O valor real não deve ser versionado.
 
-| Hotel | Property ID |
-| --- | ---: |
-| Hotel Curi Executive | 2436946 |
-| Curi Palace Hotel | 1180090 |
-| Hotel Alles Blau | 7770070 |
-| Jacques Georges Tower | 3387958 |
-| Hotel Jacques Georges Business | 3487706 |
-| ibis Pelotas | 48115946 |
-| M Tower Hotel | 2899803 |
+A URL precisa retornar o **conteúdo JSON diretamente**, sem login. Redirects
+HTTP são seguidos normalmente. Se um link de compartilhamento retornar HTML,
+a consulta retorna `error` e o servidor registra uma mensagem solicitando uma
+URL de download/conteúdo direto. Não há parsing de HTML nem autenticação Graph.
 
-Cada pesquisa continua sendo dividida por diária e preserva a ocupação. O menor
-preço é calculado sobre todas as ofertas válidas retornadas. Pesquisas idênticas
-em andamento são deduplicadas em memória por
-`propertyId|checkIn|checkOut|adults`, sem cache persistente.
+Cada clique em “Buscar preços” cria um repositório novo, baixa o arquivo uma
+vez com `cache: "no-store"` e timeout de 15 segundos, valida com Zod e indexa
+os snapshots em memória. **7 hotéis × 10 diárias = 1 download**, compartilhado
+entre todas as consultas daquela busca. A próxima busca lê novamente a fonte;
+atualizar o conteúdo na mesma URL não exige restart, rebuild ou redeploy.
 
-O coletor abre um Chromium por lote de hotel e um contexto isolado para esse
-lote. Páginas, contexto e browser são sempre fechados. Um semáforo global limita
-a coleta a no máximo três browsers simultâneos; `TRIVAGO_MAX_CONCURRENCY` aceita
-valores de 1 a 3 e usa 3 por padrão. HTTP 408, 429, 5xx e timeouts de navegação
-ou GraphQL têm no máximo três tentativas. O limite é local ao processo.
+O mapeamento central de slugs, nomes exatos do JSON e property IDs está em
+`src/providers/pricing/trivago/hotel-configs.ts`. Para cada diária, os filtros
+são Hotel + Data + hospedes. Data usa DD-MM-YYYY e é validada explicitamente.
+Execucao usa YYYY-MM-DD HH:mm:ss: só a execução mais recente da combinação pode
+fornecer ofertas, mesmo quando não possui preços válidos. Turno não define recência.
 
-Instale o Chromium local e execute os testes:
+Ofertas precisam de Site não vazio e Preco_Num numérico, finito e positivo.
+Elas são ordenadas pelo preço, com empate estável. bestPrice é o menor preço
+válido e bestProvider é o Site da primeira oferta mínima. Preco_Min e campos
+de histórico não são usados. Sem cobertura ou sem ofertas válidas, o resultado
+é unavailable; falhas técnicas do arquivo são error.
+
+O Trivago não usa mais scraping, GraphQL ou navegador e não possui fallback
+live. “Abrir pesquisa ↗” continua sendo uma URL montada localmente com os sete
+property IDs preservados. A UI, as comparações e o gráfico não foram alterados.
+
+Para testar sem OneDrive:
 
 ```bash
-npx playwright install chromium
-npm run test:trivago-curi
-npm run test:trivago-hotels
-npm run test:trivago-curi:live
-npm run test:trivago-hotels:live -- --check-in=2026-09-10 --nights=1 --adults=1
+npm run test:trivago-json
 ```
 
-O teste dos sete hotéis aceita `--nights=1..10` e `--adults=1|2`, imprime
-`status`, ofertas, melhor preço, fornecedor, duração e `searchUrl`, e nunca
-efetua clickout ou reserva. Os logs de desenvolvimento incluem apenas hotel,
-datas, tentativas, status HTTP, categoria e duração; não registram cookies,
-tokens ou outros dados sensíveis. A investigação de rede e o contrato observado
-estão em `docs/trivago-curi-executive.md`.
+Depois de configurar a URL, execute o serviço usado pelo dashboard com uma
+data atual/futura coberta pelo arquivo (substitua a data do exemplo):
+
+```bash
+npm run test:trivago-json:live -- --check-in=2026-09-11 --nights=1 --adults=2
+```
+
+Esse comando usa o registry de produção e os providers oficiais atuais. No
+dashboard autenticado, faça a mesma pesquisa para conferir o resultado visual.
+Veja o contrato, os logs e a auditoria em [docs/trivago-json.md](docs/trivago-json.md).
 
 ## Site oficial do Curi Palace Hotel
 
-O Curi Palace também usa o HBook da HSystem, com identificador público e `searchUrl` próprios. A coleta server-side consulta o endpoint JSON de disponibilidade e preserva todas as combinações de acomodação e tarifa. O provider oficial não foi alterado; a coluna Trivago usa o provider real genérico.
+O Curi Palace também usa o HBook da HSystem, com identificador público e `searchUrl` próprios. A coleta server-side consulta o endpoint JSON de disponibilidade e preserva todas as combinações de acomodação e tarifa. O provider oficial não foi alterado; a coluna Trivago usa o provider JSON.
 
 Para testar parser, estados de erro e composição híbrida sem rede:
 
@@ -138,7 +141,7 @@ O script imprime a `searchUrl` para conferência manual e nunca efetua reservas.
 
 ## Site oficial do ibis Pelotas
 
-O site da Atrio encaminha as reservas do ibis Pelotas ao motor ALL/Accor. O provider consulta server-side o GraphQL público da Accor em BRL, mantém tarifas públicas e de membro, acrescenta somente os impostos obrigatórios informados e consulta cada diária separadamente. A coluna Trivago usa o provider real genérico.
+O site da Atrio encaminha as reservas do ibis Pelotas ao motor ALL/Accor. O provider consulta server-side o GraphQL público da Accor em BRL, mantém tarifas públicas e de membro, acrescenta somente os impostos obrigatórios informados e consulta cada diária separadamente. A coluna Trivago usa o provider JSON.
 
 Para testar normalização, impostos, ocupação, múltiplas tarifas e composição híbrida sem rede:
 
@@ -164,8 +167,7 @@ Playwright, sessão de navegador, CAPTCHA, retry ou parser de preços.
 
 Na interface, a coluna e o detalhamento do Site oficial mostram somente
 “Abrir pesquisa ↗”. O preço competitivo desses hotéis vem exclusivamente do
-Trivago quando disponível. O provider real do Trivago permanece independente e
-continua usando Playwright.
+Trivago quando disponível. O provider JSON do Trivago permanece independente.
 
 Valide as três URLs, a ausência de rede e a composição com o Trivago usando:
 
@@ -183,20 +185,17 @@ Quando o projeto for publicado, adicione em **Vercel > Settings > Environment Va
 
 A `SUPABASE_SECRET_KEY` deve ser cadastrada diretamente na Vercel. Nunca adicione seu valor ao GitHub, ao README ou a uma variável iniciada por `NEXT_PUBLIC_`.
 
-O Trivago agora seleciona automaticamente `@sparticuz/chromium` nos deployments
-Vercel e mantém o Chromium do Playwright no desenvolvimento local (incluindo
-`vercel dev`). O binário Linux acompanha a função de `/dashboard`; não é
-necessário instalar Chromium no build da Vercel nem contratar um worker externo
-para esta implementação. Não há download de binários por URL durante a consulta.
+O Trivago usa apenas fetch de JSON no runtime Node.js. Cadastre também
+TRIVAGO_JSON_URL como variável server-side no ambiente de produção. A função
+não precisa de navegador nem de binário adicional. O dashboard mantém Node
+24.x e o limite atual de 300 segundos para permitir as consultas oficiais.
 
-O dashboard usa Node.js e `maxDuration = 300` segundos. Ative Fluid Compute,
-configure Node 24.x e comece com `TRIVAGO_MAX_CONCURRENCY=1` em 2 GB de memória.
-Com 4 GB, teste concorrência 2 antes de aumentá-la. Os limites e a deduplicação
-em memória continuam valendo por instância, não globalmente. Consultas longas
-podem exceder os 300 segundos e precisam de validação no deploy; não existe
-garantia de completar 10 diárias em qualquer condição de rede.
+Veja [docs/trivago-vercel.md](docs/trivago-vercel.md).
 
-Veja o passo a passo e a matriz de diagnóstico em
-[docs/trivago-vercel.md](docs/trivago-vercel.md). O smoke test offline do launcher
-é `npm run test:trivago-browser`. A abertura real do binário Linux e o acesso ao
-Trivago a partir do IP da Vercel devem ser homologados após a publicação.
+## Teste visual local opcional
+
+Playwright permanece somente em devDependencies porque scripts/check-ui.mjs
+valida os componentes reais da interface com dados fictícios. Para executar
+esse teste local, use npm run playwright:install e node scripts/check-ui.mjs.
+Essa instalação de Chromium é exclusiva do teste visual e não é necessária
+para buscar preços, fazer build ou publicar a aplicação.

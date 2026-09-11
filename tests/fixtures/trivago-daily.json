@@ -1,0 +1,15 @@
+[
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"Oferta antiga","Preco_Num":100,"Execucao":"2026-09-09 20:00:00"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"Hoteis.com","Preco_Num":296,"Execucao":"2026-09-10 19:40:36","Descrição":"Quarto Standard","Preço":"R$ 296","Vantagens":[],"Turno":"tarde","Preco_Min":1,"Comparado_Com":null,"Preco_Anterior":null,"Delta":null},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"HRS.com","Preco_Num":289,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"Booking.com","Preco_Num":299,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"Expedia","Preco_Num":306,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"","Preco_Num":10,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":2,"Site":"Sem preço","Preco_Num":null,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"Hotel Curi Executive","Data":"11-09-2026","hospedes":1,"Site":"Booking.com","Preco_Num":210,"Execucao":"2026-09-10 22:00:00"},
+  {"Hotel":"Curi Palace Hotel","Data":"11-09-2026","hospedes":2,"Site":"Booking.com","Preco_Num":320,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"M Tower Hotel","Data":"11-09-2026","hospedes":2,"Site":"Hoteis.com","Preco_Num":382,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"M Tower Hotel","Data":"11-09-2026","hospedes":2,"Site":"Booking.com","Preco_Num":420,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"M Tower Hotel","Data":"11-09-2026","hospedes":2,"Site":"HRS.com","Preco_Num":386,"Execucao":"2026-09-10 19:40:36"},
+  {"Hotel":"M Tower Hotel","Data":"11-09-2026","hospedes":2,"Site":"Expedia","Preco_Num":382,"Execucao":"2026-09-10 19:40:36"}
+]

@@ -1,8 +1,8 @@
 import "server-only";
 
-import { pricingProvider } from "@/providers/pricing/provider-registry";
-import { buildPricingResult } from "@/services/pricing/calculations";
-import { logPricing } from "@/services/pricing/logger";
+import { pricingProvider } from "../../providers/pricing/provider-registry.ts";
+import { buildPricingResult } from "./calculations.ts";
+import { logPricing } from "./logger.ts";
 import type {
   PricingHotel,
   PricingSearchResult,

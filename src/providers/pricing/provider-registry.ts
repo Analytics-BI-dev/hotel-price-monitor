@@ -1,16 +1,17 @@
 import "server-only";
 
-import { HybridPricingProvider } from "@/providers/pricing/hybrid-pricing-provider";
-import { UnconfiguredPricingProvider } from "@/providers/pricing/unconfigured-pricing-provider";
-import { CuriExecutiveOfficialProvider } from "@/providers/pricing/official-sites/curi-executive";
-import { CuriPalaceOfficialProvider } from "@/providers/pricing/official-sites/curi-palace";
+import { HybridPricingProvider } from "./hybrid-pricing-provider.ts";
+import { UnconfiguredPricingProvider } from "./unconfigured-pricing-provider.ts";
+import { CuriExecutiveOfficialProvider } from "./official-sites/curi-executive.ts";
+import { CuriPalaceOfficialProvider } from "./official-sites/curi-palace.ts";
 import {
   externalLinkOnlyOfficialHotelConfigs,
   ExternalLinkOnlyOfficialProvider,
-} from "@/providers/pricing/official-sites/external-link-only";
-import { IbisPelotasOfficialProvider } from "@/providers/pricing/official-sites/ibis-pelotas";
-import { trivagoHotelConfigs } from "@/providers/pricing/trivago/hotel-configs";
-import { createTrivagoProviderMap } from "@/providers/pricing/trivago/trivago-pricing-provider";
+} from "./official-sites/external-link-only.ts";
+import { IbisPelotasOfficialProvider } from "./official-sites/ibis-pelotas.ts";
+import { trivagoHotelConfigs } from "./trivago/hotel-configs.ts";
+import { createTrivagoJsonProviderMap } from "./trivago/trivago-json-provider.ts";
+import { TrivagoJsonRepository } from "./trivago/trivago-json-repository.ts";
 import type {
   OfficialSitePricingProvider,
   PricingProvider,
@@ -30,10 +31,16 @@ const officialSiteProviders = new Map<string, OfficialSitePricingProvider>([
     (provider) => [provider.hotelSlug, provider] as const,
   ),
 ]);
-const trivagoProviders = createTrivagoProviderMap(trivagoHotelConfigs);
-
-export const pricingProvider: PricingProvider = new HybridPricingProvider(
-  new UnconfiguredPricingProvider(),
-  officialSiteProviders,
-  trivagoProviders,
-);
+export const pricingProvider: PricingProvider = {
+  name: "hybrid",
+  search(params, hotels) {
+    // Every invocation gets its own download, including simultaneous searches
+    // with identical parameters. Official providers keep their existing lifetime.
+    const repository = new TrivagoJsonRepository();
+    return new HybridPricingProvider(
+      new UnconfiguredPricingProvider(),
+      officialSiteProviders,
+      createTrivagoJsonProviderMap(trivagoHotelConfigs, repository),
+    ).search(params, hotels);
+  },
+};
